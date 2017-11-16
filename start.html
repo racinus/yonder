@@ -1,254 +1,253 @@
 <html>
+
 <head>
-<script>
+    <script>
+        // A convinien function to get an element from an id
+        function getid(id) {
+            return document.getElementById(id);
+        }
 
-// A convinien function to get an element from an id
-function getid(id) {
-	return document.getElementById(id);
-}
+        //
+        function textNode(str) {
+            return document.createTextNode(str);
+        }
 
-//
-function textNode(str) {
-	return document.createTextNode(str);
-}
-function element(tag, content) {
-	var e = document.createElement(tag);
-	if(content)
-		e.appendChild(content);
-	return e;
-}
+        function element(tag, content) {
+            var e = document.createElement(tag);
+            if (content)
+                e.appendChild(content);
+            return e;
+        }
 
-// stages is the datastructure that contains all the text and actions of the
-// story
-var stages = {};
-var sceneStore = null;
+        // stages is the datastructure that contains all the text and actions of the
+        // story
+        var stages = {};
+        var sceneStore = null;
 
-// context is the
-var context = {
-	place: ["start", "start"],
-	currentTitle: "",
-	global: {
-	}
-};
+        // context is the
+        var context = {
+            place: ["start", "start"],
+            currentTitle: "",
+            global: {}
+        };
 
-/*
-* setup, is a function that is run before anything is displayed
-* title, is the title that is shown on the page
-* text, is the text that is shown on the page
-* choices.display, can be "none", "disabled" and otherwise
-* choices.text, is the link text
-* choices.action, is a function that is executed when that action is taken.
-*/
+        /*
+         * setup, is a function that is run before anything is displayed
+         * title, is the title that is shown on the page
+         * text, is the text that is shown on the page
+         * choices.display, can be "none", "disabled" and otherwise
+         * choices.text, is the link text
+         * choices.action, is a function that is executed when that action is taken.
+         */
 
-/*
-Below here you can insert the scripts that contains your story. In this Faile
-you can have an "init" function that will be called before the game start. it
-will be called with contaxt.global as parameter- You can use this functioin to
-to setup the data you need in global.
+        /*
+        Below here you can insert the scripts that contains your story. In this Faile
+        you can have an "init" function that will be called before the game start. it
+        will be called with contaxt.global as parameter- You can use this functioin to
+        to setup the data you need in global.
 
-function init(global) {
-	...
-}
+        function init(global) {
+        	...
+        }
 
-*/
-</script>
-<script src="story.js"></script>
-<script>
+        */
+    </script>
+    <script src="story.js"></script>
+    <script>
+        function copyScene(scene) {
+            var s = {};
+            s.setup = scene.setup;
+            s.title = scene.title;
+            s.text = scene.text;
+            s.choices = [];
+            for (var i = 0; i < scene.choices.length; i++) {
+                var e = scene.choices[i];
+                s.choices.push({
+                    state: e.state,
+                    text: e.text,
+                    action: e.action
+                });
+            }
+            return s;
+        }
 
+        function doAction(act) {
+            var e = getid("display");
 
-function copyScene(scene) {
-	var s = {};
-	s.setup = scene.setup;
-	s.title = scene.title;
-	s.text = scene.text;
-	s.choices = [];
-	for(var i =0; i < scene.choices.length; i++) {
-		var e = scene.choices[i];
-		s.choices.push({
-			state: e.state,
-			text: e.text,
-			action: e.action
-		});
-	}
-	return s;
-}
+            // Clear display div
+            while (e.firstChild) {
+                e.removeChild(e.firstChild)
+            }
 
-function doAction(act) {
-	var e = getid("display");
+            // Call action and get the new place
+            var newPlace
+            if (typeof act === "function")
+                newPlace = act(context.global);
+            else
+                newPlace = act;
 
-	// Clear display div
-	while(e.firstChild) {
-		e.removeChild(e.firstChild)
-	}
+            // newPlace can be a string that is just the scene, or an array with the stage and scene.
+            stages[context.place[0]][context.place[1]] = sceneStore;
+            if (typeof newPlace == "string") {
+                context.place[1] = newPlace;
+            } else {
+                context.place = newPlace;
+            }
 
-	// Call action and get the new place
-	var newPlace
-	if(typeof act === "function")
-		newPlace = act(context.global);
-	else
-		newPlace = act;
+            display()
+        }
 
-	// newPlace can be a string that is just the scene, or an array with the stage and scene.
-	stages[context.place[0]][context.place[1]] = sceneStore;
-	if(typeof newPlace == "string") {
-		context.place[1] = newPlace;
-	} else {
-		context.place = newPlace;
-	}
+        function choice(text, action) {
+            var b = element("button", textNode(text));
+            b.onclick = function() {
+                doAction(action);
+            }
+            var div = element("div", b)
+            div.setAttribute("class", "choice")
+            return div
+        }
 
-	display()
-}
+        function formatText(text) {
+            text = text.replace(/\n/g, "</p><p>");
+            text = "<p>" + text + "</p>";
+            text = text.replace(/\$\{(.*?)\}/g, function(m, m1) {
+                return eval("context.global." + m1.trim());
+            })
+            return text;
+        }
 
-function choice(text, action) {
-	var b = element("button", textNode(text));
-	b.onclick = function() {
-		doAction(action);
-	}
-	var div = element("div", b)
-	div.setAttribute("class", "choice")
-	return div
-}
+        var backup = []
 
-function formatText(text) {
-	text = text.replace(/\n/g, "</p><p>");
-	text = "<p>" + text + "</p>";
-	text = text.replace(/\$\{(.*?)\}/g, function(m, m1){
-		return eval("context.global." + m1.trim());
-	})
-	return text;
-}
+        function doBackup() {
+            var b = JSON.stringify(context)
+            localStorage.setItem("backup", b)
+            backup.unshift(b)
+            if (backup.length > 10) {
+                backup.pop()
+            }
+        }
 
-var backup = []
+        // display is called to put the current scene in screen.
+        function display() {
+            // Find the scene we are at now and update the totle in context.
+            // after that we can take a backup of our current position.
+            var s = stages[context.place[0]][context.place[1]];
+            context.currentTitle = s.title
+            doBackup();
 
-function doBackup() {
-	var b = JSON.stringify(context)
-	localStorage.setItem("backup", b)
-	backup.unshift(b)
-	if(backup.length > 10) {
-		backup.pop()
-	}
-}
+            var e = getid("display")
 
-// display is called to put the current scene in screen.
-function display() {
-	// Find the scene we are at now and update the totle in context.
-	// after that we can take a backup of our current position.
-	var s = stages[context.place[0]][context.place[1]];
-	context.currentTitle = s.title
-	doBackup();
+            // Take a copy of the scene before the setup function is called, because
+            // setup() can change the data in the scene. The scene is restored after
+            // the action function has been called. This way you can gp back to the
+            // same scene, regardless of how much it privious have been changed.
+            sceneStore = copyScene(s)
 
-	var e = getid("display")
+            // If setup exists in the scene, call it.
+            if (typeof s.setup === "function") {
+                s.setup(s, context.global);
+            }
 
-	// Take a copy of the scene before the setup function is called, because
-	// setup() can change the data in the scene. The scene is restored after
-	// the action function has been called. This way you can gp back to the
-	// same scene, regardless of how much it privious have been changed.
-	sceneStore = copyScene(s)
+            // Put the text on screen
+            var t = element("h2", textNode(s.title))
+            e.appendChild(t)
+            var dt = element("div")
+            dt.innerHTML = formatText(s.text);
+            e.appendChild(dt);
 
-	// If setup exists in the scene, call it.
-	if(typeof s.setup === "function") {
-		s.setup(s, context.global);
-	}
+            // Put the choices in screen
+            for (var i = 0; i < s.choices.length; i++) {
+                var c = s.choices[i];
+                if (typeof c.display == "string" && c.display == "none") {
+                    continue;
+                }
+                e.appendChild(choice(c.text, c.action));
+            }
 
-	// Put the text on screen
-	var t = element("h2", textNode(s.title))
-	e.appendChild(t)
-	var dt = element("div")
-	dt.innerHTML = formatText(s.text);
-	e.appendChild(dt);
+            var s = getid("stats");
+            while (s.firstChild) {
+                s.removeChild(s.firstChild)
+            }
+            s.innerHTML = renderStats(context.global)
+        }
 
-	// Put the choices in screen
-	for(var i = 0; i < s.choices.length; i++) {
-		var c = s.choices[i];
-		if(typeof c.display == "string" && c.display == "none") {
-			continue;
-		}
-		e.appendChild(choice(c.text, c.action));
-	}
+        function savePoint(point) {
+            localStorage.setItem(point, localStorage.getItem("backup"));
+        }
 
-	var s = getid("stats");
-	while(s.firstChild) {
-		s.removeChild(s.firstChild)
-	}
-	s.innerHTML = renderStats(context.global)
-}
+        function restorePoint(point) {
+            var save = localStorage.getItem(point);
+            if (save) {
+                context = JSON.parse(save);
+                var e = getid("display");
+                while (e.firstChild) {
+                    e.removeChild(e.firstChild)
+                }
+                setTimeout(display, 1)
+            }
+            return
+        }
 
-function savePoint(point) {
-	localStorage.setItem(point, localStorage.getItem("backup"));
-}
-function restorePoint(point) {
-	var save = localStorage.getItem(point);
-	if(save) {
-		context = JSON.parse(save);
-		var e = getid("display");
-		while(e.firstChild) {
-			e.removeChild(e.firstChild)
-		}
-		setTimeout(display, 1)
-	}
-	return
-}
+        function startScreen() {
+            var game = getid("display");
+            var start = getid("startScreen");
+            var stats = getid("stats");
 
-function startScreen() {
-	var game = getid("display");
-	var start = getid("startScreen");
-	var stats = getid("stats");
+            var bstart = getid("startNew");
+            var bcont = getid("continueOld");
 
-	var bstart = getid("startNew");
-	var bcont = getid("continueOld");
+            var back = localStorage.getItem("backup");
+            if (!back) {
+                bcont.disabled = "disabled";
+            }
 
-	var back = localStorage.getItem("backup");
-	if(!back) {
-		bcont.disabled = "disabled";
-	}
+            game.style.visibility = "hidden";
+            stats.style.visibility = "hidden";
+            start.style.visibility = "visible";
 
-	game.style.visibility = "hidden";
-	stats.style.visibility = "hidden";
-	start.style.visibility = "visible";
+            bstart.onclick = function() {
+                game.style.visibility = "visible";
+                stats.style.visibility = "visible";
+                start.style.visibility = "hidden";
+                display();
+            }
 
-	bstart.onclick = function() {
-		game.style.visibility = "visible";
-		stats.style.visibility = "visible";
-		start.style.visibility = "hidden";
-		display();
-	}
+            bcont.onclick = function() {
+                context = JSON.parse(back);
+                game.style.visibility = "visible";
+                stats.style.visibility = "visible";
+                start.style.visibility = "hidden";
+                display();
+            }
+        }
 
-	bcont.onclick = function() {
-		context = JSON.parse(back);
-		game.style.visibility = "visible";
-		stats.style.visibility = "visible";
-		start.style.visibility = "hidden";
-		display();
-	}
-}
-
-onload = function() {
-	init(context.global);
-	startScreen();
-	//display();
-}
-
-
-</script>
+        onload = function() {
+            init(context.global);
+            startScreen();
+            //display();
+        }
+    </script>
 </head>
+
 <body>
-<div id="restore">
-<a href="javascript:void(0)" onclick="savePoint('savepoint1')">Save point 1</a><br>
-<a href="javascript:void(0)" onclick="restorePoint('savepoint1')">Restore point 1</a>
-</div>
+    <div id="restore">
+        <a href="javascript:void(0)" onclick="savePoint('savepoint1')">Save point 1</a><br>
+        <a href="javascript:void(0)" onclick="restorePoint('savepoint1')">Restore point 1</a>
+    </div>
 
-<div id="stats" style="float: right; width: 300; border: black solid">
-	...
-</div>
+    <div id="stats" style="float: right; width: 300; border: black solid">
+        ...
+    </div>
 
-<div id="display">
-</div>
+    <div id="display">
+    </div>
 
-<div id="startScreen" style="visibility: hidden;">
-<h1>Welcome to the adventure game</h1>
-<button id="startNew">Start a new game</button><br>
-<button id="continueOld">Continue old game</button>
-</div>
+    <div id="startScreen" style="visibility: hidden;">
+        <h1>Welcome to the adventure game</h1>
+        <button id="startNew">Start a new game</button><br>
+        <button id="continueOld">Continue old game</button>
+    </div>
 
 </body>
+
 </html>
