@@ -43,14 +43,15 @@ To use yonder it is recommended you know some javascript.
 
 ## Make your story
 
-First make an empty javascript file. You can call it what you want. In start.html find `<script src="story.js"></script>` and change the "src" to load your story file
+First make an empty javascript file. You can call it what you want. In start.html find `<script src="story.js"></script>` and change the "src" to load your story file. If you want to split your story into multiple files, you can just list multiple script tag here with your files.
 
 ### Init function
 
-Before anything else the engine will call a function named "init" in your story script.
+Before anything else the engine will call a function named "init" in your story script, So start by adding this to your script:
 
 ```js
 function init(gloabl) {
 	// initialize global object here
 }
 ```
+The init function will be passed the global object as a argument. The engine does not use the global object for anything - it is only for data you want to keep track of. In the init function the global object is empty, so you can populate it as you want. 
