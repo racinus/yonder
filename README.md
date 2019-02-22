@@ -35,7 +35,7 @@ stages["start"] = {
 ```
 The story object is organizes into a number of statges that each have one or more scenes. A scene describe one page of description and choices. How the scenes are organozed into stages are upto you, the writer, to decide on. You can for example have a stage for each location  and/or for each time period of the story. 
 
-The information in a scene is contained in that scene. If you want save data across scenes you should put them in the "global" object. Also all data in the global object will be saved when you save the game. As you can see above, the setup and action function will get passed the global object as a parameter. From the start the glopal object is empty.
+The information in a scene is contained in that scene. If you want save data across scenes you should put them in the "global" object. Also all data in the global object will be saved when you save the game. As you can see above, the setup and action function will get passed the global object as a parameter.
 
 You write the story and the game logic in a javascript file that is imported into the engine by a script tag. Because you can use all of javascript to script your game and interact with the scene and game object, you can do some powerful stuff. The downside is that there is not much safety. If you do something wrong you may not get a nice error message.
 
@@ -55,3 +55,14 @@ function init(gloabl) {
 }
 ```
 The init function will be passed the global object as a argument. The engine does not use the global object for anything - it is only for data you want to keep track of. In the init function the global object is empty, so you can populate it as you want. 
+
+
+### Stats sidebar
+
+```js
+function renderStats(global) {
+	return "<ul> ... </ul>"
+}
+```
+This function is called by the engine for each scene displayed. The function should return a string with html that will be rendered in a box next to the scene description. This can be used to display stats or inventory or other information. renderStats will be passed the global object as its first argument.
+
