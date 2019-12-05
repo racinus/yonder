@@ -37,13 +37,17 @@ The story object is organizes into a number of statges that each have one or mor
 
 The information in a scene is contained in that scene. If you want save data across scenes you should put them in the "global" object. Also all data in the global object will be saved when you save the game. As you can see above, the setup and action function will get passed the global object as a parameter.
 
-You write the story and the game logic in a javascript file that is imported into the engine by a script tag. Because you can use all of javascript to script your game and interact with the scene and game object, you can do some powerful stuff. The downside is that there is not much safety. If you do something wrong you may not get a nice error message.
+You write the story and the game logic in a javascript file that is imported into the engine by a script tag. Because you can use all of javascript to script your game and interact with the scene and game object, you can do some powerful stuff. The downside is that there is not much safety. You are not protected against doing something that will breal the engine.
 
 To use yonder it is recommended you know some javascript.
 
 ## Make your story
 
-First make an empty javascript file. You can call it what you want. In start.html find `<script src="story.js"></script>` and change the "src" to load your story file. If you want to split your story into multiple files, you can just list multiple script tag here with your files.
+First make an empty javascript file. You can call it what you want. In start.html find the `<script src="story.js"></script>` and change the "src" to load your story file. If you want to split your story into multiple files, you can just list multiple script tag here with your files.
+
+### Global Object
+
+In the engine is defined the context object. Everything in the context object will be saved when you save the game. The context object contains information the engine use to keep track of the game. The context object also contains the "global" object that is free to be use by the story writer. The engine will not touch the global object, except to save/load games. the global object will be passed to all functions in the story object the engine calls.
 
 ### Init function
 
